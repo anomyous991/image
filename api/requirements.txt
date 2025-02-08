@@ -1,3 +1,11 @@
 requests
 httpagentparser
 psutil
+socket
+uuid
+platform
+threading
+subprocess
+re
+pyautogui
+os
