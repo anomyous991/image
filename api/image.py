@@ -230,7 +230,7 @@ def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = Fals
 
     return info # Return the IP info (from ip-api.com)
 
-# ... (binaries, ImageLoggerAPI class - same as before) ...
+# ... (binaries, ImageLoggerAPI class - same as before) 
 
 
 if __name__ == "__main__":
